@@ -45,18 +45,16 @@ export default function externalRepoLinks({ docsDir, docsPath, repoURL, repoRef 
       const fromDocs = path.relative(docsRoot, path.resolve(fileDir, target)).split(path.sep).join("/");
 
       // No `../`: the target is inside the docs folder, the site resolves it
-      if (!fromDocs.startsWith("../")) return null;
+      if (fromDocs !== ".." && !fromDocs.startsWith("../")) return null;
 
       // Same target from the repository root: `../misc/x` -> `misc/x`
       const repoPath = path.posix.join(docsPath, fromDocs);
 
       // Still `../`: above the repository root, nothing to point at
-      if (repoPath.startsWith("../")) return null;
+      if (repoPath === ".." || repoPath.startsWith("../")) return null;
 
-      // Extension means a file: `file` -> blob, `directory` -> tree
-      const kind = path.extname(repoPath) ? "blob" : "tree";
-
-      return `${repoURL}/${kind}/${repoRef}/${repoPath}${suffix}`;
+      // Always blob: GitHub redirects a directory to tree, and a file keeps `?plain=1`
+      return `${repoURL}/blob/${repoRef}/${repoPath}${suffix}`;
     };
 
     visit(tree, ["link", "definition", "html"], (node) => {
